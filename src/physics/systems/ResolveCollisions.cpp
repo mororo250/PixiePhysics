@@ -3,132 +3,146 @@
 //
 
 #include "ResolveCollisions.hpp"
-#include "../ContactPoint.hpp"
+
+// std
+#include <unordered_set>
+
+// Components
+#include "../components/ShapeLine.hpp"
+#include "../components/ShapeSphere.hpp"
+#include "../components/TransformStatic.hpp"
+#include "../components/RigidBody.hpp"
+#include "../components/TransformDynamic.hpp"
+
+#include "../lib/SphereIntersectionTest.hpp"
+#include "../lib/ContactPoint.hpp"
 
 namespace PixiePhysics
 {
-	struct CollisionResult
+	void ResolveCollisionDynamic(const Collision& collision,  const float dt, entt::registry& registry)
 	{
-		bool hasCollided;
-		float timeOfImpact; // Time of impact {0 - 1}
-		glm::vec3 normal;
-		glm::vec3 worldPoint; // Point of collision in world coord
-		glm::vec3 localPointA; // Point of collision in local coord of object A
-		glm::vec3 localPointB; // Point of collision in local coord oog object B
-	};
-	
-	void ResolveCollision(const ContactPoint &contactPoint, entt::registry &registry);
-	
-	bool IntersectDiscrete(const Transform &transformA, const Transform &transformB,
-	               const SphereShape& shapeA, const SphereShape& shapeB);
-	CollisionResult Intersect(const Transform &transformA, const Transform &transformB,
-	               const SphereShape& shapeA, const SphereShape& shapeB);
-	
-}
+		TransformDynamic& transformA = registry.get<TransformDynamic>(collision.entityA);
+		TransformDynamic& transformB = registry.get<TransformDynamic>(collision.entityB);
+		Rigidbody& bodyA = registry.get<Rigidbody>(collision.entityA);
+		Rigidbody& bodyB = registry.get<Rigidbody>(collision.entityB);
 
-void PixiePhysics::ResolveCollisions(float deltaTime, entt::registry& registry)
-{
-	auto entityView = registry.view<entt::entity>();
-	std::vector<ContactPoint> contactPoints;
-	contactPoints.reserve(entityView.size());
+		const glm::vec3 collisionAPos = transformA.lastPosition + bodyA.linearVelocity * (collision.time * dt);
+		const glm::vec3 collisionBPos = transformB.lastPosition + bodyB.linearVelocity * (collision.time * dt);
+		const glm::vec3 normal = glm::normalize(collisionAPos - collisionBPos);
 
-	// Todo: optimization - no need for checking static entities against each other
-	// Separate into two loops: dynamic vs dynamic and dynamic vs static
-    std::vector entities(entityView.begin(), entityView.end());
-	for (std::size_t i = 0; i < entities.size(); i++)
+		const glm::vec3 relativeVelocity = bodyA.linearVelocity - bodyB.linearVelocity;
+		const float elasticity = bodyA.elasticity * bodyB.elasticity;
+		const float impulseJ = (1 + elasticity) * dot(relativeVelocity, normal) / (bodyA.invertMass + bodyB.invertMass);
+		const glm::vec3 impulse = impulseJ * normal;
+
+		// UpdateBodies
+		ApplyImpulse(bodyA, impulse);
+		transformA.position = collisionAPos + bodyA.linearVelocity * (1.0f - collision.time) * dt;
+
+		ApplyImpulse(bodyB, -impulse);
+		transformB.position = collisionBPos + bodyB.linearVelocity * (1.0f - collision.time) * dt;
+	}
+
+	// collision against static objects
+	void ResolveCollisionStatic(const Collision &collision, const float dt, entt::registry &registry)
 	{
-		entt::entity entityA = entities[i];
-		Transform &transformA = registry.get<Transform>(entityA);
-		SphereShape &sphereShapeA = registry.get<SphereShape>(entityA);
-		
-		for (std::size_t j = i + 1; j < entities.size(); j++)
+		const TransformStatic& staticTransform = registry.get<TransformStatic>(collision.entityB);
+		TransformDynamic& dynamicTransform = registry.get<TransformDynamic>(collision.entityA);
+		Rigidbody& rigidbody = registry.get<Rigidbody>(collision.entityA);
+
+		const glm::vec3 collisionAPos = dynamicTransform.lastPosition + rigidbody.linearVelocity * (collision.time * dt);
+		const glm::vec3 normal = glm::normalize(collisionAPos - staticTransform.position);
+
+		const float impulseJ = (1.0f + rigidbody.elasticity) * dot(rigidbody.linearVelocity, normal) / rigidbody.invertMass;
+		const glm::vec3 impulse = impulseJ * normal;
+
+		// Update object
+		ApplyImpulse(rigidbody, -impulse);
+		dynamicTransform.position = collisionAPos + rigidbody.linearVelocity * (1.0f - collision.time) * dt;
+	}
+
+	// Todo: Split this function into smaller functions
+	void ResolveCollisions(const float dt, entt::registry& registry)
+	{
+		// Todo: avoid reallocation of collision and firstCollision vectors every frame
+		std::vector<Collision> collisions;
+		const auto dynamicGroup = registry.group<TransformDynamic, Rigidbody>();
+		collisions.reserve(dynamicGroup.size() * dynamicGroup.size());
+		for (std::size_t i = 0; i < dynamicGroup.size(); i++)
 		{
-			entt::entity entityB = entities[j];
-			Transform &transformB = registry.get<Transform>(entityB);
-			SphereShape &sphereShapeB = registry.get<SphereShape>(entityB);
-			
-			if (IntersectDiscrete(transformA, transformB, sphereShapeA, sphereShapeB))
+			const entt::entity entityA = dynamicGroup[i];
+			TransformDynamic &transformA = dynamicGroup.get<TransformDynamic>(entityA);
+			ShapeSphere &sphereShapeA = registry.get<ShapeSphere>(entityA);
+			Rigidbody& bodyA = registry.get<Rigidbody>(entityA);
+
+			for (std::size_t j = i + 1; j < dynamicGroup.size(); j++)
 			{
-				ContactPoint contactPoint{};
-				contactPoint.entityA = entityA;
-				contactPoint.entityB = entityB;
-				contactPoint.normal = normalize(transformA.position - transformB.position);
-				contactPoint.point = contactPoint.normal * sphereShapeA.radius + transformA.position;
-				contactPoint.timeOfImpact = deltaTime;
-				contactPoint.separationDistance = length(transformA.position - transformB.position) - (sphereShapeA.radius + sphereShapeB.radius);
-				
-				contactPoints.push_back(contactPoint);
+				const entt::entity entityB = dynamicGroup[j];
+				TransformDynamic &transformB = registry.get<TransformDynamic>(entityB);
+				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
+				Rigidbody& bodyB = registry.get<Rigidbody>(entityB);
+
+				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
+					sphereShapeB, bodyA, bodyB, dt);
+
+				if (hasCollided.hasCollided)
+				{
+					Collision collision{entityA, entityB, false, hasCollided.time};
+					collisions.push_back(collision);
+				}
 			}
 		}
+
+		const auto staticGroup = registry.view<TransformStatic>();
+		for (const entt::entity entityA : dynamicGroup)
+		{
+			TransformDynamic &transformA = registry.get<TransformDynamic>(entityA);
+			ShapeSphere &sphereShapeA = registry.get<ShapeSphere>(entityA);
+			Rigidbody& bodyA = registry.get<Rigidbody>(entityA);
+
+			for (const entt::entity entityB : staticGroup)
+			{
+				TransformStatic &transformB = registry.get<TransformStatic>(entityB);
+				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
+
+				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
+					sphereShapeB, bodyA);
+
+				if (hasCollided.hasCollided)
+				{
+					Collision collision{entityA, entityB, true, hasCollided.time};
+					collisions.push_back(collision);
+				}
+			}
+		}
+
+		std::ranges::sort(collisions.begin(), collisions.end(),
+			[](const Collision& a, const Collision& b) {return a.time < b.time;});
+
+		std::unordered_set<entt::entity> collidedEntities;
+		std::vector<Collision> filteredCollisions;
+		filteredCollisions.reserve(collisions.size());
+		for (const Collision& collision: collisions)
+		{
+			if (collidedEntities.contains(collision.entityA) || collidedEntities.contains(collision.entityB))
+				continue;
+
+			filteredCollisions.push_back(collision);
+			collidedEntities.insert(collision.entityA);
+			collidedEntities.insert(collision.entityB);
+		}
+
+		for (const Collision& collision: filteredCollisions)
+		{
+			if (collision.isStatic)
+				ResolveCollisionStatic(collision, dt, registry);
+			else
+				ResolveCollisionDynamic(collision, dt, registry);
+		}
 	}
-	
-	for (const ContactPoint& contactPoint : contactPoints)
+
+	void ApplyImpulse(Rigidbody& body, const glm::vec3& impulse)
 	{
-		ResolveCollision(contactPoint, registry);
+		body.linearVelocity += impulse / body.invertMass;
 	}
 }
-
-// Todo: separate this function into static vs dynamic and dynamic vs dynamic
-void PixiePhysics::ResolveCollision(const ContactPoint& contactPoint, entt::registry& registry)
-{
-	Rigidbody* const bodyA = registry.try_get<Rigidbody>(contactPoint.entityA);
-	Rigidbody* const bodyB = registry.try_get<Rigidbody>(contactPoint.entityB);
-	
-	if (bodyA == nullptr)
-	{
-		float impulseJ = (1.0f + bodyB->elasticity) * dot(bodyB->linearVelocity, contactPoint.normal) / bodyB->invertMass;
-		glm::vec3 impulse = impulseJ * contactPoint.normal;
-		ApplyImpulse(*bodyB, -impulse);
-		return;
-	}
-	if (bodyB == nullptr)
-	{
-		float impulseJ = (1.0f + bodyA->elasticity) * dot(bodyA->linearVelocity, contactPoint.normal) / bodyA->invertMass;
-		glm::vec3 impulse = impulseJ * contactPoint.normal;
-		ApplyImpulse(*bodyA, impulse);
-		return;
-	}
-
-	glm::vec3 relativeVelocity = bodyA->linearVelocity - bodyB->linearVelocity;
-	float elasticity = bodyA->elasticity * bodyB->elasticity;
-	float impulseJ = (1 + elasticity) * dot(relativeVelocity, contactPoint.normal) / (bodyA->invertMass + bodyB->invertMass);
-	glm::vec3 impulse = impulseJ * contactPoint.normal;
-	ApplyImpulse(*bodyA, impulse);
-	ApplyImpulse(*bodyB, -impulse);
-	
-	/*
-	const float ta = bodyA->invertMass / (bodyA->invertMass + bodyB->invertMass);
-	const float tb = bodyB->invertMass / (bodyA->invertMass + bodyB->invertMass);
-	
-	PixiePhysics::Transform &transformA = registry.get<PixiePhysics::Transform>(contactPoint.entityA);
-	PixiePhysics::Transform &transformB = registry.get<PixiePhysics::Transform>(contactPoint.entityB);
-	transformA.position -= ta * (transformA.position - transformB.position);
-	transformB.position += tb * (transformA.position - transformB.position);
-	*/
-}
-
-void PixiePhysics::ApplyImpulse(Rigidbody& body, const glm::vec3& impulse)
-{
-	body.linearVelocity += impulse / body.invertMass;
-}
-
-// Sphere vs Sphere discrete collision detection
-bool PixiePhysics::IntersectDiscrete(const Transform &transformA,
-                                     const Transform &transformB, const SphereShape &shapeA,
-                                     const SphereShape &shapeB)
-{
-	// Todo: Use square distance instead of length
-	float distance = length(transformA.position - transformB.position);
-	float sumRad = shapeA.radius + shapeB.radius;
-	return distance <= sumRad;
-}
-
-// Sphere vs Sphere sweep collision detection
-PixiePhysics::CollisionResult PixiePhysics::Intersect(const Transform& transformA, const Transform& transformB, const SphereShape& shapeA, const SphereShape& shapeB)
-{
-	CollisionResult result;
-	float relativeVelocity;
-	
-	
-}
-

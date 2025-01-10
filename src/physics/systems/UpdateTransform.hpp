@@ -4,5 +4,5 @@
 
 namespace PixiePhysics
 {
-	void UpdatePosition(float deltaTime, entt::registry& registry);
+	void UpdatePosition(float dt, entt::registry& registry);
 }

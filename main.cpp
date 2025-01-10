@@ -4,7 +4,6 @@
 
 #include "example/Lights.h"
 
-#include <glm/vec2.hpp>
 #include <entt/entt.hpp>
 
 #include "src/scene/Scene.hpp"
@@ -14,10 +13,8 @@
 
 int main()
 {
-    glm::ivec2 a = { 1, 2 };
-
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    constexpr int screenWidth = 800;
+    constexpr int screenHeight = 450;
     InitWindow(screenWidth, screenHeight, "Pixie Physics");
 
     Camera camera = { 0 };
@@ -31,9 +28,8 @@ int main()
     shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
 
     int ambientLoc = GetShaderLocation(shader, "ambient");
-    SetShaderValue(shader, ambientLoc, (float[4]){ 0.1f, 0.1f, 0.1f, 1.0f }, SHADER_UNIFORM_VEC4);
-
-    // Create lights
+    float ambientLight[4] = { 0.1f, 0.1f, 0.1f, 1.0f};
+    SetShaderValue(shader, ambientLoc, ambientLight, SHADER_UNIFORM_VEC4);
 
     const int MAX_LIGHTS = 5;
 
@@ -45,18 +41,20 @@ int main()
     SetTargetFPS(60);
     entt::registry registry;
     PixiePhysics::Scene scene = PixiePhysics::Scene(&registry);
-    scene.CreateSphere(glm::vec3 { 0.0f, 5.0f, 0.0f }, 1.0f, RED);
+
+    constexpr PixiePhysics::PhysicsMaterial physMaterial { 0.5f, 1.0f };
+    scene.CreateSphere(glm::vec3 { 0.0f, 5.0f, 0.0f }, physMaterial, 1.0f, WHITE);
     scene.CreateStaticSphere(glm::vec3 { 0.0f, -999.9, 0.0f }, 1000.0f, WHITE);
-    const float deltaTime = 1.0f / 60.0f;
+    constexpr float dt = 1.0f / 60.0f;
 
     while (!WindowShouldClose())
     {
         UpdateCamera(&camera, CAMERA_ORBITAL);
 
-        float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+        const float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
         SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
         PixieRendering::Render(registry, camera, shader);
-        scene.Update(deltaTime);
+        scene.Update(dt);
     }
 
     CloseWindow();

@@ -9,18 +9,20 @@ include(cmake/enttImport.cmake)
 
 # Create a library target for the shared code
 add_library(PixiePhysicsLib STATIC
-        src/physics/components/SphereShape.hpp
+        src/physics/components/ShapeSphere.hpp
         src/physics/components/RigidBody.hpp
         src/scene/Scene.cpp
         src/scene/Scene.hpp
-        src/physics/components/Transform.hpp
+        src/physics/components/TransformDynamic.hpp
         src/rendering/systems/RenderSystem.cpp
         src/rendering/systems/RenderSystem.hpp
         src/physics/systems/ResolveCollisions.cpp
         src/physics/systems/ResolveCollisions.hpp
-        src/physics/ContactPoint.hpp
+        src/physics/lib/ContactPoint.hpp
         src/physics/systems/UpdateTransform.cpp
-        src/physics/systems/UpdateTransform.hpp)
+        src/physics/systems/UpdateTransform.hpp
+        src/physics/lib/SphereIntersectionTest.cpp
+        src/physics/lib/SphereIntersectionTest.hpp)
 
 target_link_libraries(PixiePhysicsLib PUBLIC raylib)
 target_link_libraries(PixiePhysicsLib PUBLIC glm::glm)
@@ -28,6 +30,7 @@ target_link_libraries(PixiePhysicsLib PUBLIC EnTT::EnTT)
 
 add_executable(PixiePhysics main.cpp
         example/Lights.h
+        src/ui/DebugTimer.hpp
 )
 
 target_link_libraries(PixiePhysics PRIVATE PixiePhysicsLib)

@@ -6,6 +6,7 @@ namespace PixieRendering
 {
 	struct RendererMaterial
 	{
+		Model model;
 		Color color;
 	};
 }

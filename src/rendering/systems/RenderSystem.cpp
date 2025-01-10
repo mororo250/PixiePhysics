@@ -1,6 +1,7 @@
 #include "RenderSystem.hpp"
-#include "../../physics/components/SphereShape.hpp"
-#include "../../physics/components/Transform.hpp"
+#include "../../physics/components/ShapeSphere.hpp"
+#include "../../physics/components/TransformDynamic.hpp"
+#include "../../physics/components/TransformStatic.hpp"
 #include "../../rendering/components/RendererMaterial.hpp"
 
 void PixieRendering::Render(entt::registry& registry, const Camera& camera, const Shader& shader)
@@ -15,12 +16,25 @@ void PixieRendering::Render(entt::registry& registry, const Camera& camera, cons
             {
                 for (entt::entity entity : registry.view<entt::entity>())
 				{
-                    const PixiePhysics::Transform &transform = registry.get<PixiePhysics::Transform>(entity);
-                    const PixiePhysics::SphereShape &sphereShape = registry.get<PixiePhysics::SphereShape>(entity);
+                    glm::vec3 pos;
+                    if (PixiePhysics::TransformDynamic* transform =
+                        registry.try_get<PixiePhysics::TransformDynamic>(entity);
+                        transform != nullptr)
+                    {
+                        pos = transform->position;
+                    }
+                    else if (PixiePhysics::TransformStatic* transformStatic =
+                        registry.try_get<PixiePhysics::TransformStatic>(entity);
+                        transformStatic != nullptr)
+                    {
+                        pos = transformStatic->position;
+                    }
+
+                    const PixiePhysics::ShapeSphere& sphereShape = registry.get<PixiePhysics::ShapeSphere>(entity);
 					const RendererMaterial& material = registry.get<RendererMaterial>(entity);
 
-                    Vector3 position = {transform.position.x, transform.position.y, transform.position.z};
-                    DrawSphereEx(position, sphereShape.radius, 64, 64, material.color);
+                    const Vector3 position = {pos.x, pos.y, pos.z};
+                    DrawModel(material.model, position, sphereShape.radius, material.color );
                 }
 			}
             //EndShaderMode();

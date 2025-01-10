@@ -1,12 +1,13 @@
 #include "Scene.hpp"
 
 // Components
-#include "../physics/components/SphereShape.hpp"
+#include "../physics/components/ShapeSphere.hpp"
 #include "../physics/components/RigidBody.hpp"
-#include "../physics/components/Transform.hpp"
+#include "../physics/components/TransformDynamic.hpp"
 #include "../rendering/components/RendererMaterial.hpp"
 
 // Systems
+#include "../physics/components/TransformStatic.hpp"
 #include "../physics/systems/ResolveCollisions.hpp"
 #include "../physics/systems/UpdateTransform.hpp"
 
@@ -17,42 +18,53 @@ namespace PixiePhysics
     {
 	}
 	
-    void Scene::Update(const float deltaTime)
-    {
-	    ResolveCollisions(deltaTime, *m_registry);
-		UpdatePosition(deltaTime, *m_registry);
+    void Scene::Update(const float dt) const
+	{
+    	UpdatePosition(dt, *m_registry);
+	    ResolveCollisions(dt, *m_registry);
 	}
 
-    void Scene::CreateSphere(glm::vec3 pos, float radius, Color color)
+    void Scene::CreateSphere(const glm::vec3 pos, const PhysicsMaterial& physMaterial, const float radius, const Color color)
     {
-        float mass = 1.0f * radius;
-		float elasticity = 1.0f;
-
-        entt::entity entity = m_registry->create();
+        const entt::entity entity = m_registry->create();
         m_bodies.push_back(entity);
 
-        m_registry->emplace<SphereShape>(entity, radius);
+        m_registry->emplace<ShapeSphere>(entity, radius);
 	    Rigidbody& body = m_registry->emplace<Rigidbody>(entity);
-        body.invertMass = mass;
-		body.elasticity = elasticity;
+        body.invertMass = physMaterial.mass;
+		body.elasticity = physMaterial.elasticity;
 		
-        Transform& transform = m_registry->emplace<Transform>(entity);
-        transform.position = pos;
-		m_registry->emplace<PixieRendering::RendererMaterial>(entity, color);
+        m_registry->emplace<TransformDynamic>(entity, pos);
+
+    	AddRenderingMaterialComponent(entity, color);
     }
 	
-	void Scene::CreateStaticSphere(glm::vec3 pos, float radius, Color color)
+	void Scene::CreateStaticSphere(const glm::vec3 pos, const float radius, const Color color)
 	{
-		entt::entity entity = m_registry->create();
+		const entt::entity entity = m_registry->create();
 		m_bodies.push_back(entity);
-		
-		m_registry->emplace<SphereShape>(entity, radius);
-		Transform& transform = m_registry->emplace<Transform>(entity);
-		transform.position = pos;
-		m_registry->emplace<PixieRendering::RendererMaterial>(entity, color);
+
+		m_registry->emplace<ShapeSphere>(entity, radius);
+		m_registry->emplace<TransformStatic>(entity, pos);
+
+    	AddRenderingMaterialComponent(entity, color);
 	}
 
-    Scene::~Scene()
+	void Scene::AddRenderingMaterialComponent(entt::entity entity, Color color) const
+	{
+    	Model sphereModel = LoadModelFromMesh(GenMeshSphere(1.0f, 64, 64));
+    	sphereModel.materials[0].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    	sphereModel.materials[0].maps[MATERIAL_MAP_METALNESS].value = 0.0f;
+    	sphereModel.materials[0].maps[MATERIAL_MAP_ROUGHNESS].value = 0.0f;
+    	sphereModel.materials[0].maps[MATERIAL_MAP_OCCLUSION].value = 0.0f;
+    	sphereModel.materials[0].maps[MATERIAL_MAP_EMISSION].color = BLACK;
+
+    	sphereModel.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = LoadTexture("assets/resources/uvImageTexture.png");
+
+    	m_registry->emplace<PixieRendering::RendererMaterial>(entity, sphereModel, color);
+	}
+
+	Scene::~Scene()
     {
         m_registry->clear();
     }

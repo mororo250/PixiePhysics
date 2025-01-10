@@ -1,14 +1,13 @@
 #pragma once
 
-#include "../components/SphereShape.hpp"
-#include "../components/RigidBody.hpp"
-#include "../components/Transform.hpp"
+#include <glm/vec3.hpp>
 #include "entt/entity/registry.hpp"
 
 namespace PixiePhysics
 {
 	struct ContactPoint;
+	struct Rigidbody;
 	
-	void ResolveCollisions(float deltaTime, entt::registry& registry);
+	void ResolveCollisions(float dt, entt::registry& registry);
 	void ApplyImpulse(Rigidbody &body, const glm::vec3& impulse);
 };
