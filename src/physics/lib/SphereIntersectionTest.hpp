@@ -20,10 +20,10 @@ namespace PixiePhysics
                    const ShapeSphere& shapeA, const ShapeSphere& shapeB);
 
     HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformDynamic& transformB,const ShapeSphere& sphereA,
-        const ShapeSphere& sphereB, const Rigidbody& bodyA, const Rigidbody& bodyB, float dt);
+        const ShapeSphere& sphereB, float dt);
 
     HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformStatic& transformB, const ShapeSphere& sphereA,
-        const ShapeSphere& sphereB, const Rigidbody& bodyA);
+        const ShapeSphere& sphereB);
 
     bool LineSphereOverlap(const glm::vec3& spherePos, const ShapeSphere& sphere, const ShapeLine& line);
     HasCollided LineSphereIntersect(const glm::vec3& spherePos, const ShapeSphere& sphere, const ShapeLine& line);

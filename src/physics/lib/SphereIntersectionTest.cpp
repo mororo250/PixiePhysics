@@ -16,10 +16,13 @@
 namespace PixiePhysics
 {
 	HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformDynamic& transformB,
-			const ShapeSphere& sphereA, const ShapeSphere& sphereB, const Rigidbody& bodyA, const Rigidbody& bodyB, const float dt)
+			const ShapeSphere& sphereA, const ShapeSphere& sphereB, const float dt)
 	{
 		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
-		const glm::vec3 relativeVelocity = bodyA.linearVelocity - bodyB.linearVelocity;
+		const glm::vec3 bodyAVel = transformA.position - transformB.lastPosition;
+		const glm::vec3 bodyBVel = transformB.position - transformB.lastPosition;
+
+		const glm::vec3 relativeVelocity = bodyAVel - bodyBVel;
 		const glm::vec3 lineStartPos = transformB.lastPosition;
 		const glm::vec3 lineEndPos = transformB.lastPosition + relativeVelocity * dt;
 
@@ -30,7 +33,7 @@ namespace PixiePhysics
 	}
 
 	HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformStatic& transformB,
-		const ShapeSphere& sphereA, const ShapeSphere& sphereB, const Rigidbody& bodyA)
+		const ShapeSphere& sphereA, const ShapeSphere& sphereB)
 	{
 		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
 		const glm::vec3 lineStartPos = transformA.lastPosition;

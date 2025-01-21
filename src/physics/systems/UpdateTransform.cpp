@@ -34,15 +34,10 @@ void PixiePhysics::UpdatePosition(const float dt, entt::registry &registry)
 		TransformDynamic &transform = group.get<TransformDynamic>(entity);
 		Rigidbody &body = group.get<Rigidbody>(entity);
 		transform.lastPosition = transform.position;
-		transform.position = transform.position + body.linearVelocity * dt + (GRAVITY * dt * dt / 2.0f);
-		body.linearVelocity += GRAVITY * dt;
 
-		// Test when ball is changing direction
-		if (std::abs(body.linearVelocity.y) < std::abs(GRAVITY.y) * dt)
-		{
-			float timeToZeroVelocity = (-body.linearVelocity.y / GRAVITY.y);
-			glm::vec3 zeroVelocityPosition = transform.position + body.linearVelocity * timeToZeroVelocity + (GRAVITY * timeToZeroVelocity * timeToZeroVelocity / 2.0f);
-			std::cout << "Position when velocity is zero: " << zeroVelocityPosition.y << std::endl;
-		}
+		// Velocity needs to be updated before position(because of colision restitution)
+		// Can't compute acceleration because into euler formula because it transforms the movemmeent into a curve and highly complicates the sweep test
+		body.linearVelocity += GRAVITY * dt;
+		transform.position = transform.position + body.linearVelocity * dt;
 	}
 }

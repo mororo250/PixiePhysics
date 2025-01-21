@@ -1,4 +1,3 @@
-// raylib
 #include "raylib.h"
 #include "raymath.h"
 
@@ -33,11 +32,10 @@ int main()
 
     const int MAX_LIGHTS = 5;
 
-    // Todo: this shader is not working with spheres for some reason?
-    // Todo: Write simple shader to fix this
     Light lights[MAX_LIGHTS] = { 0 };
     lights[0] = CreateLight(LIGHT_DIRECTIONAL, (Vector3){ 0, 50, 0 }, Vector3Zero(), WHITE, shader);
 
+    // Todo: time should not be controlled by ray lib
     SetTargetFPS(60);
     entt::registry registry;
     PixiePhysics::Scene scene = PixiePhysics::Scene(&registry);
@@ -47,14 +45,30 @@ int main()
     scene.CreateStaticSphere(glm::vec3 { 0.0f, -999.9, 0.0f }, 1000.0f, WHITE);
     constexpr float dt = 1.0f / 60.0f;
 
+    bool isPaused = false;
+
+    // Todo: Separate physics and rendering loop and make physics take control of thicks time
     while (!WindowShouldClose())
     {
-        UpdateCamera(&camera, CAMERA_ORBITAL);
+        if (IsKeyPressed(KEY_SPACE))
+            isPaused = !isPaused;
 
+        if (!isPaused)
+        {
+            scene.Update(dt);
+        }
+        else
+        {
+            if (IsKeyPressed(KEY_R))
+                scene.GoBackState();
+            else if (IsKeyPressed(KEY_F))
+                scene.Update(dt);
+        }
+
+        UpdateCamera(&camera, CAMERA_ORBITAL);
         const float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
         SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
         PixieRendering::Render(registry, camera, shader);
-        scene.Update(dt);
     }
 
     CloseWindow();

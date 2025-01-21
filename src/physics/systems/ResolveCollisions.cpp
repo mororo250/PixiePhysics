@@ -73,17 +73,15 @@ namespace PixiePhysics
 			const entt::entity entityA = dynamicGroup[i];
 			TransformDynamic &transformA = dynamicGroup.get<TransformDynamic>(entityA);
 			ShapeSphere &sphereShapeA = registry.get<ShapeSphere>(entityA);
-			Rigidbody& bodyA = registry.get<Rigidbody>(entityA);
 
 			for (std::size_t j = i + 1; j < dynamicGroup.size(); j++)
 			{
 				const entt::entity entityB = dynamicGroup[j];
 				TransformDynamic &transformB = registry.get<TransformDynamic>(entityB);
 				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
-				Rigidbody& bodyB = registry.get<Rigidbody>(entityB);
 
 				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
-					sphereShapeB, bodyA, bodyB, dt);
+					sphereShapeB, dt);
 
 				if (hasCollided.hasCollided)
 				{
@@ -98,7 +96,6 @@ namespace PixiePhysics
 		{
 			TransformDynamic &transformA = registry.get<TransformDynamic>(entityA);
 			ShapeSphere &sphereShapeA = registry.get<ShapeSphere>(entityA);
-			Rigidbody& bodyA = registry.get<Rigidbody>(entityA);
 
 			for (const entt::entity entityB : staticGroup)
 			{
@@ -106,7 +103,7 @@ namespace PixiePhysics
 				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
 
 				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
-					sphereShapeB, bodyA);
+					sphereShapeB);
 
 				if (hasCollided.hasCollided)
 				{
