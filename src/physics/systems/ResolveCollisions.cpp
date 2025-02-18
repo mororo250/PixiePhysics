@@ -37,8 +37,10 @@ namespace PixiePhysics
 		const float impulseJ = (1 + elasticity) * dot(relativeVelocity, normal) / (bodyA.invertMass + bodyB.invertMass);
 		const glm::vec3 impulse = impulseJ * normal;
 
-		ApplyImpulse(bodyA, impulse, collisionPoint);
-		ApplyImpulse(bodyB, -impulse, collisionPoint);
+		glm::vec3 localACollisionPoint = collisionPoint - collisionAPos;
+		ApplyImpulse(bodyA, impulse, localACollisionPoint);
+		glm::vec3 localBCollisionPoint = collisionPoint - collisionBPos;
+		ApplyImpulse(bodyB, -impulse, localBCollisionPoint);
 
 		transformA.position = collisionAPos + bodyA.linearVelocity * (1.0f - collision.time) * dt;
 		transformB.position = collisionBPos + bodyB.linearVelocity * (1.0f - collision.time) * dt;
@@ -57,8 +59,8 @@ namespace PixiePhysics
 
 		const float impulseJ = (1.0f + rigidbody.elasticity) * dot(rigidbody.linearVelocity, normal) / rigidbody.invertMass;
 		const glm::vec3 impulse = impulseJ * normal;
-
-		ApplyImpulse(rigidbody, impulse, collisionPoint);
+		glm::vec3 localCollisionPoint = collisionPoint - collisionAPos;
+		ApplyImpulse(rigidbody, -impulse, localCollisionPoint);
 		dynamicTransform.position = collisionAPos + rigidbody.linearVelocity * (1.0f - collision.time) * dt;
 	}
 
@@ -142,7 +144,7 @@ namespace PixiePhysics
 	void ApplyImpulse(Rigidbody& body, const glm::vec3& impulse, const glm::vec3& impulsePoint)
 	{
 		ApplyImpulseLinear(body, impulse);
-		//ApplyImpulseAngular(body, impulse, impulsePoint);
+		ApplyImpulseAngular(body, impulse, impulsePoint);
 	}
 
 	void ApplyImpulseLinear(Rigidbody& body, const glm::vec3& impulse)

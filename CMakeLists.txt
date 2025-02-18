@@ -31,6 +31,7 @@ target_link_libraries(PixiePhysicsLib PUBLIC EnTT::EnTT)
 add_executable(PixiePhysics main.cpp
         example/Lights.h
         src/ui/DebugTimer.hpp
+        src/physics/components/StaticBody.hpp
 )
 
 target_link_libraries(PixiePhysics PRIVATE PixiePhysicsLib)

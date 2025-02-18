@@ -41,7 +41,7 @@ int main()
     PixiePhysics::Scene scene = PixiePhysics::Scene(&registry);
 
     constexpr PixiePhysics::PhysicsMaterial physMaterial { 0.5f, 1.0f };
-    scene.CreateSphere(glm::vec3 { 0.0f, 5.0f, 0.0f }, physMaterial, 1.0f, WHITE);
+    scene.CreateSphere(glm::vec3 { 1.0f, 5.0f, 0.0f }, physMaterial, 1.0f, WHITE);
     scene.CreateStaticSphere(glm::vec3 { 0.0f, -999.9, 0.0f }, 1000.0f, WHITE);
     constexpr float dt = 1.0f / 60.0f;
 

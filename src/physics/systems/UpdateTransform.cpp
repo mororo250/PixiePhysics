@@ -1,6 +1,8 @@
 #include "UpdateTransform.hpp"
 
 // Systems
+#include <raymath.h>
+
 #include <glm/ext/quaternion_trigonometric.hpp>
 
 #include "ResolveCollisions.hpp"
@@ -9,7 +11,6 @@
 #include "../components/TransformDynamic.hpp"
 
 const glm::vec3 GRAVITY = {0.0f, -9.81f, 0.0f};
-const float ELLIPSE = 0.0001;
 
 namespace PixiePhysics
 {
@@ -51,7 +52,7 @@ void PixiePhysics::UpdateRotation(const float dt, entt::registry &registry)
 		Rigidbody &body = group.get<Rigidbody>(entity);
 
 		float angle = glm::length(body.angularVelocity) * dt;
-		if (angle > 0.0f)
+		if (angle < EPSILON)
 			continue;
 		glm::vec3 axis = glm::normalize(body.angularVelocity);
 		glm::quat angularDif = glm::angleAxis(angle, axis);

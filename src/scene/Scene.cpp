@@ -38,7 +38,7 @@ namespace PixiePhysics
 
     void Scene::CreateSphere(const glm::vec3 pos, const PhysicsMaterial& physMaterial, const float radius, const Color color)
     {
-    	glm::quat rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
+    	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         const entt::entity entity = m_registry->create();
 
         m_registry->emplace<ShapeSphere>(entity, radius);
@@ -53,13 +53,13 @@ namespace PixiePhysics
     		0, it, 0,
     		0, 0, it);
 
-        m_registry->emplace<TransformDynamic>(entity, pos, rotation);
+        m_registry->emplace<TransformDynamic>(entity, pos, rotation, pos, rotation);
     	AddRenderingMaterialComponent(entity, color);
     }
 	
 	void Scene::CreateStaticSphere(const glm::vec3 pos, const float radius, const Color color)
 	{
-    	glm::quat rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
+    	glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 		const entt::entity entity = m_registry->create();
 
 		m_registry->emplace<ShapeSphere>(entity, radius);
