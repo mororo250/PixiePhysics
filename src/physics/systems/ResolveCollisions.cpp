@@ -25,39 +25,40 @@ namespace PixiePhysics
 		TransformDynamic& transformB = registry.get<TransformDynamic>(collision.entityB);
 		Rigidbody& bodyA = registry.get<Rigidbody>(collision.entityA);
 		Rigidbody& bodyB = registry.get<Rigidbody>(collision.entityB);
+		ShapeSphere& sphereShapeA = registry.get<ShapeSphere>(collision.entityA);
 
 		const glm::vec3 collisionAPos = transformA.lastPosition + bodyA.linearVelocity * (collision.time * dt);
 		const glm::vec3 collisionBPos = transformB.lastPosition + bodyB.linearVelocity * (collision.time * dt);
 		const glm::vec3 normal = glm::normalize(collisionAPos - collisionBPos);
+		const glm::vec3 collisionPoint = collisionAPos + normal * sphereShapeA.radius;
 
 		const glm::vec3 relativeVelocity = bodyA.linearVelocity - bodyB.linearVelocity;
 		const float elasticity = bodyA.elasticity * bodyB.elasticity;
 		const float impulseJ = (1 + elasticity) * dot(relativeVelocity, normal) / (bodyA.invertMass + bodyB.invertMass);
 		const glm::vec3 impulse = impulseJ * normal;
 
-		// UpdateBodies
-		ApplyImpulse(bodyA, impulse);
-		transformA.position = collisionAPos + bodyA.linearVelocity * (1.0f - collision.time) * dt;
+		ApplyImpulse(bodyA, impulse, collisionPoint);
+		ApplyImpulse(bodyB, -impulse, collisionPoint);
 
-		ApplyImpulse(bodyB, -impulse);
+		transformA.position = collisionAPos + bodyA.linearVelocity * (1.0f - collision.time) * dt;
 		transformB.position = collisionBPos + bodyB.linearVelocity * (1.0f - collision.time) * dt;
 	}
 
-	// collision against static objects
 	void ResolveCollisionStatic(const Collision &collision, const float dt, entt::registry &registry)
 	{
 		const TransformStatic& staticTransform = registry.get<TransformStatic>(collision.entityB);
 		TransformDynamic& dynamicTransform = registry.get<TransformDynamic>(collision.entityA);
 		Rigidbody& rigidbody = registry.get<Rigidbody>(collision.entityA);
+		ShapeSphere& sphereShapeA = registry.get<ShapeSphere>(collision.entityA);
 
 		const glm::vec3 collisionAPos = dynamicTransform.lastPosition + rigidbody.linearVelocity * (collision.time * dt);
 		const glm::vec3 normal = glm::normalize(collisionAPos - staticTransform.position);
+		const glm::vec3 collisionPoint = collisionAPos + normal * sphereShapeA.radius;
 
 		const float impulseJ = (1.0f + rigidbody.elasticity) * dot(rigidbody.linearVelocity, normal) / rigidbody.invertMass;
 		const glm::vec3 impulse = impulseJ * normal;
 
-		// Update object
-		ApplyImpulse(rigidbody, -impulse);
+		ApplyImpulse(rigidbody, impulse, collisionPoint);
 		dynamicTransform.position = collisionAPos + rigidbody.linearVelocity * (1.0f - collision.time) * dt;
 	}
 
@@ -138,8 +139,22 @@ namespace PixiePhysics
 		}
 	}
 
-	void ApplyImpulse(Rigidbody& body, const glm::vec3& impulse)
+	void ApplyImpulse(Rigidbody& body, const glm::vec3& impulse, const glm::vec3& impulsePoint)
+	{
+		ApplyImpulseLinear(body, impulse);
+		//ApplyImpulseAngular(body, impulse, impulsePoint);
+	}
+
+	void ApplyImpulseLinear(Rigidbody& body, const glm::vec3& impulse)
 	{
 		body.linearVelocity += impulse / body.invertMass;
+	}
+
+	// impulse point is in relative posiution
+	void ApplyImpulseAngular(Rigidbody& body, const glm::vec3& impulse, const glm::vec3& impulsePoint)
+	{
+		glm::vec3 dir = impulsePoint - body.centerOfMass;
+		glm::vec3 dirImpulse = glm::cross(dir, impulse);
+		body.angularVelocity += body.inverseInertiaTensor * dirImpulse;
 	}
 }

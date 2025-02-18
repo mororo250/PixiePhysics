@@ -8,7 +8,12 @@ namespace PixiePhysics
     struct Rigidbody
     {
         glm::vec3 linearVelocity;
+    	glm::vec3 angularVelocity;
+
+    	// Physics properties
+    	glm::mat3 inverseInertiaTensor;
         float invertMass;
 		float elasticity;
+    	glm::vec3 centerOfMass;
     };
 }

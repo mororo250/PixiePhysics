@@ -9,5 +9,7 @@ namespace PixiePhysics
 	struct Rigidbody;
 	
 	void ResolveCollisions(float dt, entt::registry& registry);
-	void ApplyImpulse(Rigidbody &body, const glm::vec3& impulse);
+	void ApplyImpulseLinear(Rigidbody &body, const glm::vec3& impulse);
+	void ApplyImpulseAngular(Rigidbody &body, const glm::vec3& impulse, const glm::vec3& impulsePoint);
+	void ApplyImpulse(Rigidbody &body, const glm::vec3& impulse, const glm::vec3& impulsePoint);
 };

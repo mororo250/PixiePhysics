@@ -65,8 +65,7 @@ namespace PixiePhysics
 		const float c = dot(toSphere, toSphere) - sphere.radius * sphere.radius;
 
 		// Todo: reduce the 3 level of nesting here
-		if (const float delta = b * b - 4 * a * c;
-			delta > 0.0f)
+		if (const float delta = b * b - 4 * a * c; delta > 0.0f)
 		{
 			const float sqrtDiscriminant = glm::sqrt(delta);
 			const float t1 = (-b - sqrtDiscriminant) / (2.0f * a);

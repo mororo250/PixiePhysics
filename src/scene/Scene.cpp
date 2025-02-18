@@ -23,6 +23,7 @@ namespace PixiePhysics
     void Scene::Update(const float dt)
 	{
     	UpdatePosition(dt, *m_registry);
+    	UpdateRotation(dt, *m_registry);
 	    ResolveCollisions(dt, *m_registry);
 
     	if (m_states.size() == 30)
@@ -37,25 +38,32 @@ namespace PixiePhysics
 
     void Scene::CreateSphere(const glm::vec3 pos, const PhysicsMaterial& physMaterial, const float radius, const Color color)
     {
+    	glm::quat rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
         const entt::entity entity = m_registry->create();
 
         m_registry->emplace<ShapeSphere>(entity, radius);
 	    Rigidbody& body = m_registry->emplace<Rigidbody>(entity);
-        body.invertMass = physMaterial.mass;
+        body.invertMass = 1 / physMaterial.mass;
 		body.elasticity = physMaterial.elasticity;
-		
-        m_registry->emplace<TransformDynamic>(entity, pos);
 
+    	// Calculate inertia tensor for sphere with constant density
+    	const float it = 2.5f * body.invertMass / (radius * radius);
+    	body.inverseInertiaTensor = glm::mat3(
+    		it, 0, 0,
+    		0, it, 0,
+    		0, 0, it);
+
+        m_registry->emplace<TransformDynamic>(entity, pos, rotation);
     	AddRenderingMaterialComponent(entity, color);
     }
 	
 	void Scene::CreateStaticSphere(const glm::vec3 pos, const float radius, const Color color)
 	{
+    	glm::quat rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f);
 		const entt::entity entity = m_registry->create();
 
 		m_registry->emplace<ShapeSphere>(entity, radius);
-		m_registry->emplace<TransformStatic>(entity, pos);
-
+		m_registry->emplace<TransformStatic>(entity, pos, rotation);
     	AddRenderingMaterialComponent(entity, color);
 	}
 
@@ -67,7 +75,6 @@ namespace PixiePhysics
     	sphereModel.materials[0].maps[MATERIAL_MAP_ROUGHNESS].value = 0.0f;
     	sphereModel.materials[0].maps[MATERIAL_MAP_OCCLUSION].value = 0.0f;
     	sphereModel.materials[0].maps[MATERIAL_MAP_EMISSION].color = BLACK;
-
     	sphereModel.materials[0].maps[MATERIAL_MAP_ALBEDO].texture = LoadTexture("assets/resources/uvImageTexture.png");
 
     	m_registry->emplace<PixieRendering::RendererMaterial>(entity, sphereModel, color);
@@ -97,9 +104,9 @@ namespace PixiePhysics
     	m_registry->clear();
     	std::vector<entt::any>* dataPtr = m_states.front();
 
-    	auto archive = [dataPtr, pos = 0u](auto &elem) mutable
+    	auto archive = [dataPtr, pos = 0u]<typename T0>(T0 &elem) mutable
     	{
-    		elem = entt::any_cast<std::remove_reference_t<decltype(elem)>>((*dataPtr)[pos++]);
+    		elem = entt::any_cast<std::remove_reference_t<T0>>((*dataPtr)[pos++]);
     	};
 
     	// Todo: can this code be generated so we don't need to rewrite it every time I add a new component?

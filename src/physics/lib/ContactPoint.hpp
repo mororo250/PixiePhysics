@@ -5,7 +5,6 @@
 #pragma once
 
 #include "entt/entity/entity.hpp"
-#include "glm/vec3.hpp"
 
 namespace PixiePhysics
 {
