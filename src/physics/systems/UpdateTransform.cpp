@@ -1,6 +1,7 @@
 #include "UpdateTransform.hpp"
 
 // Systems
+#include <iostream>
 #include <raymath.h>
 
 #include <glm/ext/quaternion_trigonometric.hpp>

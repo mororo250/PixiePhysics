@@ -2,7 +2,7 @@
 // Created by mororo on 12/24/24.
 //
 
-#include "SphereIntersectionTest.hpp"
+#include "SphereSphereCollisionTest.hpp"
 
 #include "ContactPoint.hpp"
 

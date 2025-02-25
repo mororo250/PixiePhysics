@@ -1,3 +1,5 @@
+#define GLM_FORCE_RIGHT_HANDED
+
 #include "raylib.h"
 #include "raymath.h"
 
@@ -7,8 +9,6 @@
 
 #include "src/scene/Scene.hpp"
 #include "src/rendering/systems/RenderSystem.hpp"
-
-#define GLSL_VERSION            330
 
 int main()
 {
@@ -40,14 +40,14 @@ int main()
     entt::registry registry;
     PixiePhysics::Scene scene = PixiePhysics::Scene(&registry);
 
-    constexpr PixiePhysics::PhysicsMaterial physMaterial { 0.5f, 1.0f };
-    scene.CreateSphere(glm::vec3 { 1.0f, 5.0f, 0.0f }, physMaterial, 1.0f, WHITE);
+    constexpr PixiePhysics::PhysicsMaterial physMaterial { 0.2f, 0.5f, 1.0f };
+    scene.CreateSphere(glm::vec3 { -1.0f, 5.0f, 0.0f }, physMaterial, 1.0f, WHITE);
     scene.CreateStaticSphere(glm::vec3 { 0.0f, -999.9, 0.0f }, 1000.0f, WHITE);
     constexpr float dt = 1.0f / 60.0f;
 
     bool isPaused = false;
 
-    // Todo: Separate physics and rendering loop and make physics take control of thicks time
+    // Todo: Separate physics and rendering loop and make physics take control of ticks time
     while (!WindowShouldClose())
     {
         if (IsKeyPressed(KEY_SPACE))
@@ -65,7 +65,7 @@ int main()
                 scene.Update(dt);
         }
 
-        UpdateCamera(&camera, CAMERA_ORBITAL);
+        UpdateCamera(&camera, CAMERA_FREE);
         const float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
         SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
         PixieRendering::Render(registry, camera, shader);

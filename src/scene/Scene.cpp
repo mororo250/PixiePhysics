@@ -9,6 +9,7 @@
 // Systems
 #include <iostream>
 
+#include "../physics/components/StaticBody.hpp"
 #include "../physics/components/TransformStatic.hpp"
 #include "../physics/systems/ResolveCollisions.hpp"
 #include "../physics/systems/UpdateTransform.hpp"
@@ -45,6 +46,7 @@ namespace PixiePhysics
 	    Rigidbody& body = m_registry->emplace<Rigidbody>(entity);
         body.invertMass = 1 / physMaterial.mass;
 		body.elasticity = physMaterial.elasticity;
+    	body.friction = physMaterial.friction;
 
     	// Calculate inertia tensor for sphere with constant density
     	const float it = 2.5f * body.invertMass / (radius * radius);
@@ -64,6 +66,7 @@ namespace PixiePhysics
 
 		m_registry->emplace<ShapeSphere>(entity, radius);
 		m_registry->emplace<TransformStatic>(entity, pos, rotation);
+    	m_registry->emplace<StaticBody>(entity, 1.0f, 1.0f);
     	AddRenderingMaterialComponent(entity, color);
 	}
 
@@ -90,6 +93,7 @@ namespace PixiePhysics
     	snapshot.get<entt::entity>(archive)
     		.get<PixiePhysics::ShapeSphere>(archive)
     		.get<PixiePhysics::Rigidbody>(archive)
+    		.get<PixiePhysics::StaticBody>(archive)
     		.get<PixiePhysics::TransformDynamic>(archive)
     		.get<PixiePhysics::TransformStatic>(archive)
     		.get<PixieRendering::RendererMaterial>(archive);
@@ -113,6 +117,7 @@ namespace PixiePhysics
     	entt::snapshot_loader(*m_registry).get<entt::entity>(archive)
     		.get<PixiePhysics::ShapeSphere>(archive)
 			.get<PixiePhysics::Rigidbody>(archive)
+    		.get<PixiePhysics::StaticBody>(archive)
 			.get<PixiePhysics::TransformDynamic>(archive)
 			.get<PixiePhysics::TransformStatic>(archive)
 			.get<PixieRendering::RendererMaterial>(archive);
@@ -121,15 +126,12 @@ namespace PixiePhysics
     	delete dataPtr;
     }
 
-
 	Scene::~Scene()
     {
     	for (std::vector<entt::any>* state : m_states)
-    	{
     		delete state;
-    	}
+
     	m_states.clear();
         m_registry->clear();
-
     }
 }

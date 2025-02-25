@@ -26,6 +26,4 @@ namespace PixiePhysics
 
     bool LineSphereOverlap(const glm::vec3& spherePos, const ShapeSphere& sphere, const ShapeLine& line);
     HasCollided LineSphereIntersect(const glm::vec3& spherePos, const ShapeSphere& sphere, const ShapeLine& line);
-
 }
-

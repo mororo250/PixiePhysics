@@ -14,6 +14,7 @@ namespace PixiePhysics
     	glm::mat3 inverseInertiaTensor;
         float invertMass;
 		float elasticity;
+    	float friction;
     	glm::vec3 centerOfMass;
     };
 }

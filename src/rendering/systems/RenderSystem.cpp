@@ -1,5 +1,10 @@
 #include "RenderSystem.hpp"
 
+#include <iostream>
+#include <ostream>
+
+#include <__ranges/transform_view.h>
+
 #include <glm/ext/quaternion_trigonometric.hpp>
 
 #include "../../physics/components/ShapeSphere.hpp"
@@ -29,6 +34,11 @@ void PixieRendering::Render(entt::registry& registry, const Camera& camera, cons
                         pos = transform->position;
                         axisRot = glm::axis(transform->rotation);
                         angleRotation = glm::angle(transform->rotation);
+
+                        std::cout << "quat: {" << transform->rotation.x << " " << transform->rotation.y << " " <<
+                            transform->rotation.z << " " << transform->rotation.w << "}" << std::endl;
+                        std::cout << "axis: {" << axisRot.x << " " << axisRot.y << " " << axisRot.z << "}" << std::endl;
+                        std::cout << "angle: " << -glm::degrees(angleRotation) << std::endl;
                     }
                     else if (PixiePhysics::TransformStatic* transformStatic =
                         registry.try_get<PixiePhysics::TransformStatic>(entity);
@@ -46,7 +56,7 @@ void PixieRendering::Render(entt::registry& registry, const Camera& camera, cons
                     const Vector3 position = {pos.x, pos.y, pos.z};
                     const Vector3 scale = {sphereShape.radius, sphereShape.radius, sphereShape.radius};
                     const Vector3 axisRotation = {axisRot.x, axisRot.y, axisRot.z};
-                    DrawModelEx(material.model, position, axisRotation, glm::degrees(angleRotation), scale, material.color );
+                    DrawModelEx(material.model, position, axisRotation, -glm::degrees(angleRotation), scale, material.color );
                 }
 			}
             //EndShaderMode();

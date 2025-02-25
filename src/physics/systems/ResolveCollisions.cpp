@@ -8,13 +8,18 @@
 #include <unordered_set>
 
 // Components
+#include <raymath.h>
+
+#include <glm/ext/quaternion_trigonometric.hpp>
+
 #include "../components/ShapeLine.hpp"
 #include "../components/ShapeSphere.hpp"
 #include "../components/TransformStatic.hpp"
 #include "../components/RigidBody.hpp"
+#include "../components/StaticBody.hpp"
 #include "../components/TransformDynamic.hpp"
 
-#include "../lib/SphereIntersectionTest.hpp"
+#include "../lib/SphereSphereCollisionTest.hpp"
 #include "../lib/ContactPoint.hpp"
 
 namespace PixiePhysics
@@ -49,19 +54,64 @@ namespace PixiePhysics
 	void ResolveCollisionStatic(const Collision &collision, const float dt, entt::registry &registry)
 	{
 		const TransformStatic& staticTransform = registry.get<TransformStatic>(collision.entityB);
+		const StaticBody& staticBody = registry.get<StaticBody>(collision.entityB);
 		TransformDynamic& dynamicTransform = registry.get<TransformDynamic>(collision.entityA);
 		Rigidbody& rigidbody = registry.get<Rigidbody>(collision.entityA);
 		ShapeSphere& sphereShapeA = registry.get<ShapeSphere>(collision.entityA);
 
+		// Calculate position and rotation at the point of collision
 		const glm::vec3 collisionAPos = dynamicTransform.lastPosition + rigidbody.linearVelocity * (collision.time * dt);
+		glm::quat collisionARotation = dynamicTransform.lastRotation;
+		float angle = glm::length(rigidbody.angularVelocity) * (collision.time * dt);
+		if (angle > EPSILON)
+		{
+			const glm::vec3 axis = glm::normalize(rigidbody.angularVelocity);
+			const glm::quat angularDif = glm::angleAxis(angle, axis);
+			collisionARotation = glm::normalize(angularDif * dynamicTransform.lastRotation);
+		}
+
 		const glm::vec3 normal = glm::normalize(collisionAPos - staticTransform.position);
 		const glm::vec3 collisionPoint = collisionAPos + normal * sphereShapeA.radius;
+		glm::vec3 localColPoint = collisionPoint - collisionAPos;
+		glm::vec3 vel = rigidbody.linearVelocity + glm::cross(rigidbody.angularVelocity, localColPoint);
 
-		const float impulseJ = (1.0f + rigidbody.elasticity) * dot(rigidbody.linearVelocity, normal) / rigidbody.invertMass;
+		float elasticity = rigidbody.elasticity * staticBody.elasticity;
+		// Todo: why is angular factor and how why add it here in the denominator?
+		const float impulseJ = (1.0f + elasticity) * dot(vel, normal) / rigidbody.invertMass;
 		const glm::vec3 impulse = impulseJ * normal;
-		glm::vec3 localCollisionPoint = collisionPoint - collisionAPos;
-		ApplyImpulse(rigidbody, -impulse, localCollisionPoint);
+		ApplyImpulse(rigidbody, -impulse, localColPoint);
+		ApplyFriction(rigidbody, staticBody, normal, localColPoint, vel);
+
 		dynamicTransform.position = collisionAPos + rigidbody.linearVelocity * (1.0f - collision.time) * dt;
+
+		// Compute new rotation
+		angle = glm::length(rigidbody.angularVelocity) * (1.0f - collision.time) * dt;
+		if (angle < EPSILON)
+			return;
+
+		const glm::vec3 axis = glm::normalize(rigidbody.angularVelocity);
+		const glm::quat angularDif = glm::angleAxis(angle, axis);
+		dynamicTransform.rotation = glm::normalize(angularDif * collisionARotation);
+	}
+
+	void ApplyFriction(Rigidbody& rigidbody, const StaticBody& staticBody, const glm::vec3& normal, const glm::vec3& localColPoint, const glm::vec3& vel)
+	{
+		const float friction = rigidbody.friction * staticBody.friction;
+		if (friction <= EPSILON)
+			return;
+
+		const float velNormal = dot(vel, normal);
+		const glm::vec3 velTangent = vel - normal * velNormal;
+		if (glm::length(velTangent) <= EPSILON)
+			return;
+
+		const glm::vec3 tanDir = glm::normalize(velTangent);
+		const glm::vec3 inertia = glm::cross(rigidbody.inverseInertiaTensor * glm::cross(localColPoint, tanDir), localColPoint);
+		const float invInertia = glm::dot(inertia, tanDir);
+		const float reducedMass = 1.0f / (rigidbody.invertMass + invInertia);
+
+		const glm::vec3 frictionImpulse = velTangent * friction * reducedMass;
+		ApplyImpulse(rigidbody, -frictionImpulse, localColPoint);
 	}
 
 	// Todo: Split this function into smaller functions
@@ -156,7 +206,7 @@ namespace PixiePhysics
 	void ApplyImpulseAngular(Rigidbody& body, const glm::vec3& impulse, const glm::vec3& impulsePoint)
 	{
 		glm::vec3 dir = impulsePoint - body.centerOfMass;
-		glm::vec3 dirImpulse = glm::cross(dir, impulse);
-		body.angularVelocity += body.inverseInertiaTensor * dirImpulse;
+		glm::vec3 torque = glm::cross(dir, impulse);
+		body.angularVelocity += body.inverseInertiaTensor * torque;
 	}
 }

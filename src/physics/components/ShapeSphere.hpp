@@ -6,5 +6,4 @@ namespace PixiePhysics
     {
         float radius;
     };
-
 }

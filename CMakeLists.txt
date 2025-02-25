@@ -21,8 +21,12 @@ add_library(PixiePhysicsLib STATIC
         src/physics/lib/ContactPoint.hpp
         src/physics/systems/UpdateTransform.cpp
         src/physics/systems/UpdateTransform.hpp
-        src/physics/lib/SphereIntersectionTest.cpp
-        src/physics/lib/SphereIntersectionTest.hpp)
+        src/physics/lib/SphereSphereCollisionTest.cpp
+        src/physics/lib/SphereSphereCollisionTest.hpp
+        src/physics/lib/BoxSphereCollisionTest.cpp
+        src/physics/lib/BoxSphereCollisionTest.hpp
+        src/physics/lib/BoxBoxCollisionTest.cpp
+        src/physics/lib/BoxBoxCollisionTest.hpp)
 
 target_link_libraries(PixiePhysicsLib PUBLIC raylib)
 target_link_libraries(PixiePhysicsLib PUBLIC glm::glm)

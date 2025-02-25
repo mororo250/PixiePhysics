@@ -3,9 +3,8 @@
 
 namespace PixiePhysics
 {
-	struct  StaticBody
-	{
-		float friction;
-		float elasticity;
-	};
+    struct ShapeBox
+    {
+        glm::vec3 size;
+    };
 }

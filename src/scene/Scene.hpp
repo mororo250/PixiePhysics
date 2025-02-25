@@ -11,6 +11,7 @@ namespace PixiePhysics
 {
     struct PhysicsMaterial
     {
+        float friction;
         float elasticity;
         float mass;
     };
