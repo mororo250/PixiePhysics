@@ -14,7 +14,7 @@
 
 #include "../components/ShapeLine.hpp"
 #include "../components/ShapeSphere.hpp"
-#include "../components/TransformStatic.hpp"
+#include "../components/Transform.hpp"
 #include "../components/RigidBody.hpp"
 #include "../components/StaticBody.hpp"
 #include "../components/TransformDynamic.hpp"
@@ -53,7 +53,7 @@ namespace PixiePhysics
 
 	void ResolveCollisionStatic(const Collision &collision, const float dt, entt::registry &registry)
 	{
-		const TransformStatic& staticTransform = registry.get<TransformStatic>(collision.entityB);
+		const Transform& staticTransform = registry.get<Transform>(collision.entityB);
 		const StaticBody& staticBody = registry.get<StaticBody>(collision.entityB);
 		TransformDynamic& dynamicTransform = registry.get<TransformDynamic>(collision.entityA);
 		Rigidbody& rigidbody = registry.get<Rigidbody>(collision.entityA);
@@ -133,7 +133,7 @@ namespace PixiePhysics
 				TransformDynamic &transformB = registry.get<TransformDynamic>(entityB);
 				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
 
-				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
+				const HasCollided& hasCollided = SphereSphereSweepTest(transformA, transformB, sphereShapeA,
 					sphereShapeB, dt);
 
 				if (hasCollided.hasCollided)
@@ -144,7 +144,7 @@ namespace PixiePhysics
 			}
 		}
 
-		const auto staticGroup = registry.view<TransformStatic>();
+		const auto staticGroup = registry.view<Transform>();
 		for (const entt::entity entityA : dynamicGroup)
 		{
 			TransformDynamic &transformA = registry.get<TransformDynamic>(entityA);
@@ -152,10 +152,10 @@ namespace PixiePhysics
 
 			for (const entt::entity entityB : staticGroup)
 			{
-				TransformStatic &transformB = registry.get<TransformStatic>(entityB);
+				Transform &transformB = registry.get<Transform>(entityB);
 				ShapeSphere &sphereShapeB = registry.get<ShapeSphere>(entityB);
 
-				const HasCollided& hasCollided = SphereSphereIntersect(transformA, transformB, sphereShapeA,
+				const HasCollided& hasCollided = SphereSphereSweepTest(transformA, transformB, sphereShapeA,
 					sphereShapeB);
 
 				if (hasCollided.hasCollided)

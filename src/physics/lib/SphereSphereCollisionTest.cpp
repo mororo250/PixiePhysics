@@ -1,7 +1,3 @@
-//
-// Created by mororo on 12/24/24.
-//
-
 #include "SphereSphereCollisionTest.hpp"
 
 #include "ContactPoint.hpp"
@@ -11,43 +7,12 @@
 #include "../components/ShapeSphere.hpp"
 #include "../components/RigidBody.hpp"
 #include "../components/TransformDynamic.hpp"
-#include "../components/TransformStatic.hpp"
+#include "../components/Transform.hpp"
 
 namespace PixiePhysics
 {
-	HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformDynamic& transformB,
-			const ShapeSphere& sphereA, const ShapeSphere& sphereB, const float dt)
-	{
-		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
-		const glm::vec3 bodyAVel = transformA.position - transformB.lastPosition;
-		const glm::vec3 bodyBVel = transformB.position - transformB.lastPosition;
-
-		const glm::vec3 relativeVelocity = bodyAVel - bodyBVel;
-		const glm::vec3 lineStartPos = transformB.lastPosition;
-		const glm::vec3 lineEndPos = transformB.lastPosition + relativeVelocity * dt;
-
-		const HasCollided& result = LineSphereIntersect(transformA.lastPosition, sphereAB,
-			ShapeLine{ lineStartPos, lineEndPos});
-
-		return result;
-	}
-
-	HasCollided SphereSphereIntersect(const TransformDynamic& transformA, const TransformStatic& transformB,
-		const ShapeSphere& sphereA, const ShapeSphere& sphereB)
-	{
-		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
-		const glm::vec3 lineStartPos = transformA.lastPosition;
-		const glm::vec3 lineEndPos = transformA.position;
-
-		// Todo: how to deal with when it's already intersecting
-		const HasCollided result = LineSphereIntersect(transformB.position, sphereAB,
-			ShapeLine{ lineStartPos, lineEndPos});
-
-		return result;
-	}
-
-
-	HasCollided LineSphereIntersect(const glm::vec3& spherePos,const ShapeSphere &sphere, const ShapeLine &line)
+	// Line is point start pos and point end pos
+	HasCollided SpherePointSweepTest(const glm::vec3& spherePos,const ShapeSphere &sphere, const ShapeLine &line)
 	{
 		HasCollided result{};
 		result.hasCollided = false;
@@ -97,6 +62,37 @@ namespace PixiePhysics
 		return result;
 	}
 
+	HasCollided SphereSphereSweepTest(const TransformDynamic& transformA, const TransformDynamic& transformB,
+			const ShapeSphere& sphereA, const ShapeSphere& sphereB, const float dt)
+	{
+		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
+		const glm::vec3 bodyAVel = transformA.position - transformB.lastPosition;
+		const glm::vec3 bodyBVel = transformB.position - transformB.lastPosition;
+
+		const glm::vec3 relativeVelocity = bodyAVel - bodyBVel;
+		const glm::vec3 lineStartPos = transformB.lastPosition;
+		const glm::vec3 lineEndPos = transformB.lastPosition + relativeVelocity * dt;
+
+		const HasCollided& result = SpherePointSweepTest(transformA.lastPosition, sphereAB,
+			ShapeLine{ lineStartPos, lineEndPos});
+
+		return result;
+	}
+
+	HasCollided SphereSphereSweepTest(const TransformDynamic& transformA, const Transform& transformB,
+		const ShapeSphere& sphereA, const ShapeSphere& sphereB)
+	{
+		const ShapeSphere sphereAB { sphereA.radius + sphereB.radius };
+		const glm::vec3 lineStartPos = transformA.lastPosition;
+		const glm::vec3 lineEndPos = transformA.position;
+
+		// Todo: how to deal with when it's already intersecting
+		const HasCollided result = SpherePointSweepTest(transformB.position, sphereAB,
+			ShapeLine{ lineStartPos, lineEndPos});
+
+		return result;
+	}
+
 	bool LineSphereOverlap(const glm::vec3 &spherePos,
 					   const ShapeSphere& sphere, const ShapeLine& line)
 	{
@@ -115,13 +111,25 @@ namespace PixiePhysics
 		return distance <= sphere.radius;
 	}
 
+	std::pair<glm::vec3, glm::vec3> GetClosestPointSphereSphere(const glm::vec3 &spherePos, const ShapeSphere &sphere,
+		const glm::vec3& spherePos2, const ShapeSphere &sphere2)
+	{
+		glm::vec3 direction = spherePos2 - spherePos;
+		direction = glm::normalize(direction);
+		const glm::vec3 closestPoint1 = spherePos + direction * sphere.radius;
+		const glm::vec3 closestPoint2 = spherePos2 - direction * sphere2.radius;
+		return {closestPoint1, closestPoint2};
+	}
+
 	bool SphereSphereOverlap(const TransformDynamic &transformA,
-										 const TransformDynamic &transformB, const ShapeSphere &shapeA,
-										 const ShapeSphere &shapeB)
+	                         const TransformDynamic &transformB, const ShapeSphere &shapeA,
+	                         const ShapeSphere &shapeB)
 	{
 		glm::vec3 relativePos = transformA.position - transformB.position;
 		const float squareDistance = dot(relativePos, relativePos);
 		const float sumRad = shapeA.radius + shapeB.radius;
 		return squareDistance <= sumRad * sumRad;
 	}
+
+
 }

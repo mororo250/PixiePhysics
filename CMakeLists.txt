@@ -26,7 +26,9 @@ add_library(PixiePhysicsLib STATIC
         src/physics/lib/BoxSphereCollisionTest.cpp
         src/physics/lib/BoxSphereCollisionTest.hpp
         src/physics/lib/BoxBoxCollisionTest.cpp
-        src/physics/lib/BoxBoxCollisionTest.hpp)
+        src/physics/lib/BoxBoxCollisionTest.hpp
+        src/physics/lib/Gjk.hpp
+        src/physics/lib/BarycentricCoord.hpp)
 
 target_link_libraries(PixiePhysicsLib PUBLIC raylib)
 target_link_libraries(PixiePhysicsLib PUBLIC glm::glm)
@@ -36,6 +38,7 @@ add_executable(PixiePhysics main.cpp
         example/Lights.h
         src/ui/DebugTimer.hpp
         src/physics/components/StaticBody.hpp
+        src/physics/utils/Constatns.hpp
 )
 
 target_link_libraries(PixiePhysics PRIVATE PixiePhysicsLib)

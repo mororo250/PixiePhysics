@@ -5,6 +5,6 @@ namespace PixiePhysics
 {
     struct ShapeBox
     {
-        glm::vec3 size;
+        glm::vec3 halfExtents;
     };
 }

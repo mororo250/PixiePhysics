@@ -9,7 +9,7 @@
 
 #include "../../physics/components/ShapeSphere.hpp"
 #include "../../physics/components/TransformDynamic.hpp"
-#include "../../physics/components/TransformStatic.hpp"
+#include "../../physics/components/Transform.hpp"
 #include "../../rendering/components/RendererMaterial.hpp"
 
 void PixieRendering::Render(entt::registry& registry, const Camera& camera, const Shader& shader)
@@ -40,8 +40,8 @@ void PixieRendering::Render(entt::registry& registry, const Camera& camera, cons
                         std::cout << "axis: {" << axisRot.x << " " << axisRot.y << " " << axisRot.z << "}" << std::endl;
                         std::cout << "angle: " << -glm::degrees(angleRotation) << std::endl;
                     }
-                    else if (PixiePhysics::TransformStatic* transformStatic =
-                        registry.try_get<PixiePhysics::TransformStatic>(entity);
+                    else if (PixiePhysics::Transform* transformStatic =
+                        registry.try_get<PixiePhysics::Transform>(entity);
                         transformStatic != nullptr)
                     {
                         pos = transformStatic->position;

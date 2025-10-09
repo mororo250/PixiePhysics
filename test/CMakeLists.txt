@@ -2,8 +2,17 @@ project(PixiePhysicsTest)
 
 include(../cmake/gtestImport.cmake)
 
-add_executable(PixiePhysicsTest firstTest.cpp)
+add_executable(PixiePhysicsTest firstTest.cpp
+        GjkUnitTest.cpp
+        BaryCentricCoordUnitTest.cpp)
 
-#addTest(PixiePhysicsTest firstTest.cpp)
-target_link_libraries(PixiePhysicsTest PRIVATE GTest::GTest)
-target_link_libraries(PixiePhysicsTest PRIVATE glm::glm)
+
+target_link_libraries(PixiePhysicsTest PRIVATE
+        PixiePhysicsLib    # Sua própria biblioteca
+        glm                # Biblioteca GLM
+        raylib             # Biblioteca RayLib
+        gtest              # Google Test
+        gtest_main         # Biblioteca principal do Google Test
+)
+
+

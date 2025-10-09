@@ -1,7 +1,3 @@
-//
-// Created by João Mororo on 10/12/2024.
-//
-
 #pragma once
 
 #include "entt/entity/entity.hpp"

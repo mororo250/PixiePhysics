@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "../physics/components/StaticBody.hpp"
-#include "../physics/components/TransformStatic.hpp"
+#include "../physics/components/Transform.hpp"
 #include "../physics/systems/ResolveCollisions.hpp"
 #include "../physics/systems/UpdateTransform.hpp"
 
@@ -65,7 +65,7 @@ namespace PixiePhysics
 		const entt::entity entity = m_registry->create();
 
 		m_registry->emplace<ShapeSphere>(entity, radius);
-		m_registry->emplace<TransformStatic>(entity, pos, rotation);
+		m_registry->emplace<Transform>(entity, pos, rotation);
     	m_registry->emplace<StaticBody>(entity, 1.0f, 1.0f);
     	AddRenderingMaterialComponent(entity, color);
 	}
@@ -95,7 +95,7 @@ namespace PixiePhysics
     		.get<PixiePhysics::Rigidbody>(archive)
     		.get<PixiePhysics::StaticBody>(archive)
     		.get<PixiePhysics::TransformDynamic>(archive)
-    		.get<PixiePhysics::TransformStatic>(archive)
+    		.get<PixiePhysics::Transform>(archive)
     		.get<PixieRendering::RendererMaterial>(archive);
     	m_states.push_front(data);
     }
@@ -119,7 +119,7 @@ namespace PixiePhysics
 			.get<PixiePhysics::Rigidbody>(archive)
     		.get<PixiePhysics::StaticBody>(archive)
 			.get<PixiePhysics::TransformDynamic>(archive)
-			.get<PixiePhysics::TransformStatic>(archive)
+			.get<PixiePhysics::Transform>(archive)
 			.get<PixieRendering::RendererMaterial>(archive);
 
     	m_states.pop_front();
